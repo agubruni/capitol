@@ -270,10 +270,10 @@
   .roster-arrow svg{width:16px;height:16px;}
   .roster-grid{
     display:flex;gap:2px;background:var(--line);border:1px solid var(--line);
-    overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
-    scrollbar-width:none;
+    overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;-ms-overflow-style:none;
   }
-  .roster-grid::-webkit-scrollbar{display:none;}
+  .roster-grid::-webkit-scrollbar{display:none;width:0;height:0;}
   .roster-grid .player-card{flex:0 0 calc(25% - 1.5px);scroll-snap-align:start;}
   .player-card{background:var(--panel);padding:0;position:relative;overflow:hidden;}
   .player-photo{aspect-ratio:3/4;background:linear-gradient(160deg,#201F1C,#0A0A0A);position:relative;display:flex;align-items:center;justify-content:center;}
