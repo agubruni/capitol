@@ -864,10 +864,9 @@
       if(!shareUrl) return null;
       const match = shareUrl.match(/\/d\/([a-zA-Z0-9_-]+)/) || shareUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
       const id = match ? match[1] : null;
-      // CDN de imágenes de Google en calidad real (no la vista previa /thumbnail).
-      // Sin sufijos extra en el "=wNNN": cualquier texto agregado ahí hace que
-      // Google no reconozca el tamaño pedido y sirva una versión chica.
-      return id ? `https://lh3.googleusercontent.com/d/${id}=w1200` : shareUrl;
+      // Sirve el archivo original tal cual está en Drive, sin pasar por
+      // ningún generador de miniaturas de Google (que degradaba la calidad).
+      return id ? `https://drive.google.com/uc?export=view&id=${id}` : shareUrl;
     }
 
     fetch(csvUrl)
