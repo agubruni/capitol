@@ -92,7 +92,7 @@
   /* ---------- NAV ---------- */
   header{
     position:sticky;top:0;z-index:100;
-    background:rgba(10,10,10,.86);backdrop-filter:blur(8px);
+    background:rgba(10,10,10,.94);
     border-bottom:1px solid var(--line);
   }
   .nav{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;column-gap:20px;height:78px;}
@@ -864,10 +864,10 @@
       if(!shareUrl) return null;
       const match = shareUrl.match(/\/d\/([a-zA-Z0-9_-]+)/) || shareUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
       const id = match ? match[1] : null;
-      // el parámetro "cb" cambia en cada carga de página para evitar que el
-      // navegador (o Google) muestren una foto vieja guardada en caché
-      const cacheBuster = Math.floor(Date.now() / (1000 * 60 * 30)); // se renueva cada 30 min
-      return id ? `https://drive.google.com/thumbnail?id=${id}&sz=w1200&cb=${cacheBuster}` : shareUrl;
+      // CDN de imágenes de Google en calidad real (no la vista previa /thumbnail).
+      // Sin sufijos extra en el "=wNNN": cualquier texto agregado ahí hace que
+      // Google no reconozca el tamaño pedido y sirva una versión chica.
+      return id ? `https://lh3.googleusercontent.com/d/${id}=w1200` : shareUrl;
     }
 
     fetch(csvUrl)
