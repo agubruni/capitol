@@ -177,16 +177,20 @@
   }
 
   .hero-strip{
+    position:relative;
     display:flex;align-items:stretch;
     width:100%;max-width:860px;margin:36px auto 0;
-    background:rgba(20,20,18,.55);
     border-radius:30px;overflow:hidden;
-    -webkit-backdrop-filter:blur(18px) saturate(140%);
-    backdrop-filter:blur(18px) saturate(140%);
     box-shadow:0 20px 40px rgba(0,0,0,.35), inset 0 1px 0 rgba(245,244,239,.12);
   }
-  .strip-section{flex:1;padding:26px 40px;display:flex;flex-direction:column;justify-content:center;text-align:left;}
-  .strip-divider{width:1px;background:rgba(245,244,239,.14);}
+  .hero-strip::before{
+    content:"";position:absolute;inset:0;z-index:0;
+    background:rgba(20,20,18,.55);
+    -webkit-backdrop-filter:blur(18px) saturate(140%);
+    backdrop-filter:blur(18px) saturate(140%);
+  }
+  .strip-section{position:relative;z-index:1;flex:1;padding:26px 40px;display:flex;flex-direction:column;justify-content:center;text-align:left;}
+  .strip-divider{position:relative;z-index:1;width:1px;background:rgba(245,244,239,.14);}
   .side-tag{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gray);margin-bottom:14px;}
   .strip-score{display:flex;flex-direction:column;gap:10px;}
   .strip-team{display:flex;align-items:baseline;gap:12px;}
