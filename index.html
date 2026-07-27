@@ -864,9 +864,8 @@
       if(!shareUrl) return null;
       const match = shareUrl.match(/\/d\/([a-zA-Z0-9_-]+)/) || shareUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
       const id = match ? match[1] : null;
-      // Sirve el archivo original tal cual está en Drive, sin pasar por
-      // ningún generador de miniaturas de Google (que degradaba la calidad).
-      return id ? `https://drive.google.com/uc?export=view&id=${id}` : shareUrl;
+      const cacheBuster = Math.floor(Date.now() / (1000 * 60 * 30)); // se renueva cada 30 min
+      return id ? `https://drive.google.com/thumbnail?id=${id}&sz=w1200&cb=${cacheBuster}` : shareUrl;
     }
 
     fetch(csvUrl)
