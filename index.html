@@ -98,16 +98,17 @@
   .nav{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;column-gap:20px;height:78px;}
   .nav-right{justify-self:end;display:flex;align-items:center;gap:16px;}
   .brand{display:flex;align-items:center;gap:12px;color:var(--fg);justify-self:start;}
-  .brand-mark{width:32px;height:auto;color:var(--fg);}
+  .brand-mark{width:40px;height:auto;color:var(--fg);transition:opacity .2s;}
+  .brand:hover .brand-mark{opacity:.75;}
   .brand span{font-family:var(--display);font-size:15px;letter-spacing:.05em;text-transform:uppercase;}
-  .nav-links{display:flex;align-items:center;gap:26px;justify-self:center;}
-  .nav-links a{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--gray);transition:.2s;}
+  .nav-links{display:flex;align-items:center;gap:30px;justify-self:center;}
+  .nav-links a{font-family:var(--mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--gray);transition:.2s;}
   .nav-links a:hover{color:var(--accent);}
   .nav-toggle{display:none;font-family:var(--mono);font-size:12px;text-transform:uppercase;background:none;color:var(--fg);border:1.5px solid var(--fg);padding:10px 14px;cursor:pointer;}
   .nav-cta{
     position:relative;
     background:none;color:var(--accent);
-    font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;
+    font-family:var(--mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;
     padding:8px 0;white-space:nowrap;
     transition:color .2s;
   }
@@ -437,9 +438,8 @@
 
 <header>
   <div class="wrap nav">
-    <a href="#inicio" class="brand">
+    <a href="#inicio" class="brand" aria-label="Club Sportivo Capitol">
       <svg class="brand-mark" viewBox="0 0 187.5 229.8"><use href="#escudo"/></svg>
-      <span>Capitol</span>
     </a>
     <nav class="nav-links">
       <a href="#inicio">Novedades</a>
@@ -848,27 +848,35 @@
     reveals.forEach(el => revealObserver.observe(el));
   })();
 
-  // Conteo animado del marcador del hero al cargar
-  (function(){
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    ['scoreCapitol','scoreRival'].forEach(id=>{
-      const el = document.getElementById(id);
-      if(!el) return;
-      const target = parseInt(el.textContent, 10);
-      if(isNaN(target)) return;
-      let current = 0;
-      const duration = 900;
-      const start = performance.now();
-      function tick(now){
-        const p = Math.min(1, (now - start) / duration);
-        const eased = 1 - Math.pow(1 - p, 3);
-        current = Math.round(eased * target);
-        el.textContent = current;
-        if(p < 1) requestAnimationFrame(tick);
-      }
-      requestAnimationFrame(tick);
-    });
-  })();
+  // Conteo animado del marcador. Se expone globalmente para poder relanzarlo
+  // cuando llegan los datos de la planilla (si no, la animación inicial
+  // terminaría pisando el resultado real con el valor por defecto del HTML).
+  let scoreAnimToken = 0;
+  function animarScore(el, target){
+    if(!el) return;
+    if(isNaN(target)){ return; }
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+      el.textContent = target;
+      return;
+    }
+    const token = ++scoreAnimToken;
+    el.dataset.token = token;
+    const duration = 900;
+    const start = performance.now();
+    function tick(now){
+      if(el.dataset.token != token) return; // otra animación tomó el control
+      const p = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(eased * target);
+      if(p < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  ['scoreCapitol','scoreRival'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) animarScore(el, parseInt(el.textContent, 10));
+  });
 
   // Mobile nav toggle
   const navToggle = document.getElementById('navToggle');
@@ -890,7 +898,10 @@
   (function cargarNovedad(){
     if(!SHEET_ID) return; // todavía no está configurado
 
-    const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
+    // gid=0 es la hoja original de la planilla (la de novedades).
+    // Es importante fijarla: si no, al haber más pestañas (ej: Barbacoa)
+    // Google puede devolver otra y no encuentra las columnas esperadas.
+    const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=0`;
 
     function parseCSV(text){
       const rows = [];
@@ -952,8 +963,8 @@
         if(data.mvp_nombre) $('mvpName').textContent = data.mvp_nombre;
         if(data.mvp_stats) $('mvpStats').textContent = data.mvp_stats;
 
-        if(data.capitol_pts) $('scoreCapitol').textContent = data.capitol_pts;
-        if(data.rival_pts) $('scoreRival').textContent = data.rival_pts;
+        if(data.capitol_pts) animarScore($('scoreCapitol'), parseInt(data.capitol_pts, 10));
+        if(data.rival_pts) animarScore($('scoreRival'), parseInt(data.rival_pts, 10));
         const capVal = parseFloat(data.capitol_pts) || 0;
         const rivVal = parseFloat(data.rival_pts) || 0;
         $('scoreCapitol').classList.toggle('win', capVal >= rivVal);
