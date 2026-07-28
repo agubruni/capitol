@@ -262,6 +262,29 @@
   }
   @media(prefers-reduced-motion:reduce){.sponsor-track{animation:none;}}
 
+  /* ---------- RESULTADOS DEL CAMPEONATO ---------- */
+  .results-nav{display:flex;justify-content:flex-end;gap:10px;margin-bottom:20px;}
+  .results-track{
+    display:flex;gap:2px;background:var(--line);border:1px solid var(--line);
+    overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;-ms-overflow-style:none;
+  }
+  .results-track::-webkit-scrollbar{display:none;width:0;height:0;}
+  .result-card{
+    flex:0 0 calc(25% - 1.5px);scroll-snap-align:start;
+    background:var(--panel);padding:26px 24px;
+    display:flex;flex-direction:column;gap:14px;
+  }
+  .result-card.placeholder{opacity:.4;}
+  .rc-date{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gray);}
+  .rc-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;}
+  .rc-team{font-family:var(--display);font-size:12px;text-transform:uppercase;letter-spacing:.02em;color:var(--fg);}
+  .rc-team.capitol{font-weight:700;}
+  .rc-score{font-family:var(--mono);font-size:24px;color:var(--gray);}
+  .rc-score.win{color:var(--accent);}
+  @media(max-width:900px){.result-card{flex:0 0 60%;}}
+  @media(max-width:480px){.result-card{flex:0 0 78%;}}
+
   /* ---------- PLANTEL ---------- */
   .roster-nav{display:flex;justify-content:flex-end;gap:10px;margin-bottom:20px;}
   .roster-arrow{
@@ -420,6 +443,7 @@
     </a>
     <nav class="nav-links">
       <a href="#inicio">Novedades</a>
+      <a href="#resultados">Resultados</a>
       <a href="#plantel">Plantel</a>
       <a href="#historia">Historia</a>
       <a href="#asociate">Asociate</a>
@@ -476,6 +500,36 @@
   <a href="#plantel" class="scroll-cue" aria-label="Scrollear hacia abajo">
     <span class="scroll-mouse"><span class="scroll-dot"></span></span>
   </a>
+</section>
+
+<!-- ================= RESULTADOS DEL CAMPEONATO ================= -->
+<section id="resultados">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div>
+        <div class="eyebrow">Torneo DTA</div>
+        <h2>Resultados</h2>
+      </div>
+      <p>El recorrido de Capitol fecha a fecha en el campeonato.</p>
+    </div>
+
+    <div class="results-nav">
+      <button class="roster-arrow" id="resPrev" aria-label="Resultado anterior">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+      <button class="roster-arrow" id="resNext" aria-label="Resultado siguiente">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+
+    <div class="results-track" id="resultsTrack">
+      <div class="result-card placeholder">
+        <span class="rc-date">—</span>
+        <div class="rc-row"><span class="rc-team">Capitol</span><span class="rc-score">—</span></div>
+        <div class="rc-row"><span class="rc-team">Rival</span><span class="rc-score">—</span></div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- ================= PLANTEL ================= -->
@@ -762,20 +816,22 @@
     updatePhoto();
   })();
 
-  // Carrusel del plantel — navegación con flechas
-  (function(){
-    const track = document.querySelector('.roster-grid');
-    const prevBtn = document.getElementById('rosterPrev');
-    const nextBtn = document.getElementById('rosterNext');
+  // Carruseles con flechas (plantel y resultados del campeonato)
+  function initCarrusel(trackSel, cardSel, prevId, nextId){
+    const track = document.querySelector(trackSel);
+    const prevBtn = document.getElementById(prevId);
+    const nextBtn = document.getElementById(nextId);
     if(!track || !prevBtn || !nextBtn) return;
 
     function step(){
-      const card = track.querySelector('.player-card');
+      const card = track.querySelector(cardSel);
       return card ? card.getBoundingClientRect().width + 2 : 200;
     }
     prevBtn.addEventListener('click', ()=> track.scrollBy({left:-step(), behavior:'smooth'}));
     nextBtn.addEventListener('click', ()=> track.scrollBy({left:step(), behavior:'smooth'}));
-  })();
+  }
+  initCarrusel('.roster-grid', '.player-card', 'rosterPrev', 'rosterNext');
+  initCarrusel('.results-track', '.result-card', 'resPrev', 'resNext');
 
   // Reveal on scroll — animación sutil para cards, pasos y encabezados
   (function(){
@@ -920,6 +976,24 @@
 
         swapPhotoSmooth($('heroPhotoBg'), driveDirectUrl(data.foto_hero));
         swapPhotoSmooth($('mvpPhotoBg'), driveDirectUrl(data.foto_mvp));
+
+        // Slider de resultados del campeonato — el más reciente primero
+        const track = $('resultsTrack');
+        if(track){
+          const partidos = dataRows.map(rowToObj).reverse();
+          const cards = partidos.map(m => {
+            const c = parseFloat(m.capitol_pts) || 0;
+            const r = parseFloat(m.rival_pts) || 0;
+            const capWin = c >= r ? ' win' : '';
+            const rivWin = r > c ? ' win' : '';
+            return `<div class="result-card">
+              <span class="rc-date">${m.fecha || ''}</span>
+              <div class="rc-row"><span class="rc-team capitol">Capitol</span><span class="rc-score${capWin}">${m.capitol_pts || '—'}</span></div>
+              <div class="rc-row"><span class="rc-team">${m.rival || 'Rival'}</span><span class="rc-score${rivWin}">${m.rival_pts || '—'}</span></div>
+            </div>`;
+          }).join('');
+          if(cards) track.innerHTML = cards;
+        }
       })
       .catch(err => console.warn('No se pudo cargar la novedad desde Google Sheets:', err));
   })();
